@@ -157,6 +157,7 @@ abstract class MusicScreen(protected val host: com.thelightphone.sdk.SealedLight
     }
     override fun onAppPause() {
         Podcasts.saveProgress()
+        Audiobooks.saveProgress()
         Music.disconnect()
     }
 

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 const val MUSIC_DIR = "music"
 const val PLAYLIST_DIR = "playlists"
 const val PODCAST_DIR = "podcasts"
+const val BOOK_DIR = "audiobooks"
 
 @EntryPoint
 object ToolEntryPoint : LightEntryPoint {
@@ -38,6 +39,13 @@ object ToolEntryPoint : LightEntryPoint {
                     label = "Podcasts",
                     path = PODCAST_DIR,
                     headerText = "subscriptions.txt lists your shows: one podcast feed (RSS) URL per line.",
+                )
+            ),
+            ClientLeafNode(
+                FileBrowserSpec(
+                    label = "Audiobooks",
+                    path = BOOK_DIR,
+                    headerText = "One folder per book. A single .m4b or .mp3 file works too, and its chapters are read.",
                 )
             ),
         ),

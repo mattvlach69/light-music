@@ -19,6 +19,7 @@ import com.thelightphone.sdk.ui.LightTextVariant
 import com.thelightphone.sdk.ui.LightThemeTokens
 import com.thelightphone.sdk.ui.LightTouchableProgressBar
 import com.thelightphone.sdk.ui.gridUnitsAsDp
+import com.thelightphone.sdk.ui.lightClickable
 
 class NowPlayingScreen(host: SealedLightActivity) : MusicScreen(host) {
 
@@ -42,9 +43,15 @@ class NowPlayingScreen(host: SealedLightActivity) : MusicScreen(host) {
         val isPodcast = item?.id?.startsWith(PODCAST_ID_PREFIX) == true
         val episode = if (isPodcast) Podcasts.episodeFor(item?.id) else null
         val speed by Podcasts.speed.collectAsState()
+        val books by Audiobooks.books.collectAsState()
+        val bookRef = Audiobooks.parseId(item?.id)
+        val book = bookRef?.let { (id, _) -> books.firstOrNull { it.id == id } }
+        val chapterIndex = book?.chapterAt(bookRef.second, position)
+        val chapter = chapterIndex?.let { book.chapters.getOrNull(it) }
+        val spoken = isPodcast || bookRef != null
 
         val rightButton = when {
-            isPodcast -> LightBarButton.Text(formatSpeed(speed), onClick = { Podcasts.cycleSpeed() })
+            spoken -> LightBarButton.Text(formatSpeed(speed), onClick = { Podcasts.cycleSpeed() })
             track != null -> LightBarButton.LightIcon(LightIcons.ADD, onClick = { navigateTo({ AddToPlaylistScreen(it, track) }) })
             else -> null
         }
@@ -52,7 +59,7 @@ class NowPlayingScreen(host: SealedLightActivity) : MusicScreen(host) {
             if (playing) LightIcons.PAUSE else LightIcons.PLAY,
             onClick = { if (playing) player.pause() else player.play() },
         )
-        val controls = if (isPodcast) listOf(
+        val controls = if (spoken) listOf(
             LightBarButton.LightIcon(LightIcons.SKIP_BACKWARD_FIFTEEN, onClick = {
                 player.seekTo((position - 15_000).coerceAtLeast(0))
             }),
@@ -92,14 +99,24 @@ class NowPlayingScreen(host: SealedLightActivity) : MusicScreen(host) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 LightText(
-                    text = item.metadata.artist ?: track?.artist.orEmpty(),
+                    text = when {
+                        book != null -> chapter?.title.orEmpty()
+                        else -> item.metadata.artist ?: track?.artist.orEmpty()
+                    },
                     variant = LightTextVariant.Copy,
-                    maxLines = 1,
+                    maxLines = if (book != null) 2 else 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 0.5f.gridUnitsAsDp()),
+                    modifier = Modifier.padding(top = 0.5f.gridUnitsAsDp()).let { m ->
+                        // Tap the chapter name to see every chapter.
+                        if (book != null) m.lightClickable { navigateTo({ BookScreen(it, book.id) }) } else m
+                    },
                 )
                 LightText(
-                    text = if (isPodcast) formatDate(episode?.pubDate ?: 0) else item.metadata.album ?: track?.album.orEmpty(),
+                    text = when {
+                        book != null && chapterIndex != null -> "Chapter ${chapterIndex + 1} of ${book.chapters.size}"
+                        isPodcast -> formatDate(episode?.pubDate ?: 0)
+                        else -> item.metadata.album ?: track?.album.orEmpty()
+                    },
                     variant = LightTextVariant.Copy,
                     lighten = true,
                     maxLines = 1,
@@ -116,8 +133,14 @@ class NowPlayingScreen(host: SealedLightActivity) : MusicScreen(host) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     LightText(formatTime(position), LightTextVariant.Detail, monospace = true)
                     LightText(
-                        if (isPodcast) (if (duration > 0) "${formatTime(duration - position)} left" else "")
-                        else "${index + 1} of ${queue.size}",
+                        when {
+                            book != null && chapterIndex != null -> {
+                                val end = book.chapterEndMs(chapterIndex).takeIf { it > 0 } ?: duration
+                                if (end > 0) "${formatTime((end - position).coerceAtLeast(0))} left in chapter" else ""
+                            }
+                            isPodcast -> if (duration > 0) "${formatTime(duration - position)} left" else ""
+                            else -> "${index + 1} of ${queue.size}"
+                        },
                         LightTextVariant.Detail,
                         lighten = true,
                     )

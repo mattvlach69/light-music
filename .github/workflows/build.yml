@@ -34,6 +34,9 @@ jobs:
           set -o pipefail
           ./gradlew -DlightSdk.toolOnly=true :tool:assembleDebug --console=plain 2>&1 | tee build.log
 
+      - name: Test chapter reading
+        run: ./gradlew -DlightSdk.toolOnly=true :tool:testDebugUnitTest --console=plain 2>&1 | tee -a build.log
+
       - name: Report errors
         if: failure()
         run: |

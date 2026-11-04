@@ -29,6 +29,7 @@ class HomeScreen(host: SealedLightActivity) : MusicScreen(host) {
         super.willShow()
         Music.refresh(lightContext)
         Podcasts.init(lightContext)
+        Audiobooks.refresh(lightContext)
     }
 
     @Composable
@@ -38,6 +39,7 @@ class HomeScreen(host: SealedLightActivity) : MusicScreen(host) {
         val loading by Music.loading.collectAsState()
         val hasQueue = rememberHasQueue()
         val shows by Podcasts.shows.collectAsState()
+        val books by Audiobooks.books.collectAsState()
 
         Frame(title = null, onBack = null) {
             val noMusic = !loading && library.tracks.isEmpty()
@@ -74,6 +76,11 @@ class HomeScreen(host: SealedLightActivity) : MusicScreen(host) {
                 item {
                     ListRow("Podcasts", plural(shows.size, "show")) {
                         navigateTo({ PodcastsScreen(it) })
+                    }
+                }
+                item {
+                    ListRow("Audiobooks", plural(books.size, "book")) {
+                        navigateTo({ AudiobooksScreen(it) })
                     }
                 }
             }
