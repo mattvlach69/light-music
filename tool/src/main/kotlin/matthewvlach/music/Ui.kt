@@ -44,6 +44,7 @@ fun Frame(
     onBack: (() -> Unit)?,
     right: LightBarButton? = null,
     bottom: List<LightBarButton>? = null,
+    volumeFlash: Boolean = true,
     body: @Composable ColumnScope.() -> Unit,
 ) {
     val colors by LightThemeController.colors.collectAsState()
@@ -55,7 +56,7 @@ fun Frame(
                 rightButton = right,
             )
             Column(Modifier.weight(1f).fillMaxWidth()) { body() }
-            VolumeFlash()
+            if (volumeFlash) VolumeFlash()
             if (!bottom.isNullOrEmpty()) LightBottomBar(items = bottom)
         }
     }

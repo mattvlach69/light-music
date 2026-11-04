@@ -75,6 +75,7 @@ class NowPlayingScreen(host: SealedLightActivity) : MusicScreen(host) {
             onBack = { goBack() },
             right = rightButton,
             bottom = controls,
+            volumeFlash = false, // this screen already has its own volume bar
         ) {
             if (item == null) {
                 Message("Nothing playing.")
