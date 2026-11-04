@@ -1,9 +1,10 @@
 [tool]
 id = "com.matthewvlach.music"
 label = "Music"
-versionCode = 1
-versionName = "1.0.0"
-permissions = []
+versionCode = 2
+versionName = "1.1.0"
+# internet is for podcasts: searching, feeds, streaming and downloads.
+permissions = ["android.permission.INTERNET", "android.permission.ACCESS_NETWORK_STATE"]
 # detached-audio keeps music playing after you leave the tool.
 # tool-manager-provider lets you add songs and playlists from your computer.
 capabilities = ["detached-audio", "tool-manager-provider"]

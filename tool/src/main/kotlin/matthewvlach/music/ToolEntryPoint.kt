@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 const val MUSIC_DIR = "music"
 const val PLAYLIST_DIR = "playlists"
+const val PODCAST_DIR = "podcasts"
 
 @EntryPoint
 object ToolEntryPoint : LightEntryPoint {
@@ -30,6 +31,13 @@ object ToolEntryPoint : LightEntryPoint {
                     label = "Playlists",
                     path = PLAYLIST_DIR,
                     headerText = "Playlists are .m3u files. One song path per line, relative to Songs.",
+                )
+            ),
+            ClientLeafNode(
+                FileBrowserSpec(
+                    label = "Podcasts",
+                    path = PODCAST_DIR,
+                    headerText = "subscriptions.txt lists your shows: one podcast feed (RSS) URL per line.",
                 )
             ),
         ),

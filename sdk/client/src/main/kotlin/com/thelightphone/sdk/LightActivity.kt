@@ -231,6 +231,9 @@ class SealedLightContext(internal val androidContext: Context) {
     val filesDir: File by lazy{ androidContext.filesDir }
     val fileShare: LightFileShare by lazy { LightFileShare(androidContext) }
     val connectivity: LightConnectivity by lazy { LightConnectivity(androidContext) }
+    val mediaVolume: com.thelightphone.sdk.audio.LightMediaVolume by lazy {
+        com.thelightphone.sdk.audio.LightMediaVolume(androidContext.applicationContext)
+    }
     fun readAsset(path: String): ByteArray = androidContext.assets.open(path).use { it.readBytes() }
 }
 /**

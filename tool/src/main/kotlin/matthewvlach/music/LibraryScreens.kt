@@ -28,6 +28,7 @@ class HomeScreen(host: SealedLightActivity) : MusicScreen(host) {
     override fun willShow() {
         super.willShow()
         Music.refresh(lightContext)
+        Podcasts.init(lightContext)
     }
 
     @Composable
@@ -36,37 +37,43 @@ class HomeScreen(host: SealedLightActivity) : MusicScreen(host) {
         val playlists by Music.playlists.collectAsState()
         val loading by Music.loading.collectAsState()
         val hasQueue = rememberHasQueue()
+        val shows by Podcasts.shows.collectAsState()
 
         Frame(title = null, onBack = null) {
-            if (!loading && library.tracks.isEmpty()) {
-                Message(
-                    "No music yet.\n\nOpen Tool Manager on your computer, choose Music, " +
-                        "and add files to Songs.",
-                )
-                return@Frame
-            }
+            val noMusic = !loading && library.tracks.isEmpty()
             RowList {
                 if (hasQueue) item {
                     ListRow("Now playing") { navigateTo({ NowPlayingScreen(it) }) }
                 }
-                item {
-                    ListRow("Artists", plural(library.artists.size, "artist")) {
-                        navigateTo({ ArtistsScreen(it) })
+                if (noMusic) {
+                    item {
+                        ListRow("No music yet", "Add songs from your computer", dim = true) {}
+                    }
+                } else {
+                    item {
+                        ListRow("Artists", plural(library.artists.size, "artist")) {
+                            navigateTo({ ArtistsScreen(it) })
+                        }
+                    }
+                    item {
+                        ListRow("Albums", plural(library.albums.size, "album")) {
+                            navigateTo({ AlbumsScreen(it, artist = null) })
+                        }
+                    }
+                    item {
+                        ListRow("Playlists", plural(playlists.size, "playlist")) {
+                            navigateTo({ PlaylistsScreen(it) })
+                        }
+                    }
+                    item {
+                        ListRow("Songs", if (loading) "Loading…" else plural(library.songs.size, "song")) {
+                            navigateTo({ SongsScreen(it, artist = null) })
+                        }
                     }
                 }
                 item {
-                    ListRow("Albums", plural(library.albums.size, "album")) {
-                        navigateTo({ AlbumsScreen(it, artist = null) })
-                    }
-                }
-                item {
-                    ListRow("Playlists", plural(playlists.size, "playlist")) {
-                        navigateTo({ PlaylistsScreen(it) })
-                    }
-                }
-                item {
-                    ListRow("Songs", if (loading) "Loading…" else plural(library.songs.size, "song")) {
-                        navigateTo({ SongsScreen(it, artist = null) })
+                    ListRow("Podcasts", plural(shows.size, "show")) {
+                        navigateTo({ PodcastsScreen(it) })
                     }
                 }
             }

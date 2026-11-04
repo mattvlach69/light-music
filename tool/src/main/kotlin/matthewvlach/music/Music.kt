@@ -8,6 +8,7 @@ import com.thelightphone.sdk.audio.LightAudioPlayback
 import com.thelightphone.sdk.audio.LightAudioPlayer
 import com.thelightphone.sdk.audio.LightAudioSource
 import com.thelightphone.sdk.audio.LightMediaMetadata
+import com.thelightphone.sdk.audio.LightMediaVolume
 import com.thelightphone.sdk.audio.LightPlayerSpec
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
@@ -86,6 +87,27 @@ object Music {
 
     fun playlist(name: String): Playlist? = _playlists.value.firstOrNull { it.name == name }
 
+    // Volume
+
+    private var _volume: LightMediaVolume? = null
+    /** The phone's media volume. Set up by the first screen that shows. */
+    val volume: LightMediaVolume? get() = _volume
+
+    private val _volumeShownAt = MutableStateFlow(0L)
+    /** When the volume keys were last pressed, so screens can show the level briefly. */
+    val volumeShownAt: StateFlow<Long> = _volumeShownAt
+
+    fun attachVolume(v: LightMediaVolume) {
+        if (_volume == null) _volume = v
+        _volume?.refresh()
+    }
+
+    fun stepVolume(up: Boolean) {
+        val v = _volume ?: return
+        if (up) v.stepUp() else v.stepDown()
+        _volumeShownAt.value = System.currentTimeMillis()
+    }
+
     // Player
 
     private var player: LightAudioPlayer? = null
@@ -121,6 +143,7 @@ object Music {
         main.launch {
             if (!p.awaitReady()) return@launch
             p.setMediaQueue(order.map(Track::toAudioItem), start)
+            p.speed = 1f
             p.play()
         }
     }

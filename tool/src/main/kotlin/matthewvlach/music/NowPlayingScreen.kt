@@ -39,26 +39,42 @@ class NowPlayingScreen(host: SealedLightActivity) : MusicScreen(host) {
 
         val item = queue.getOrNull(index)
         val track = item?.id?.let { id -> library.tracks.firstOrNull { it.path == id } }
+        val isPodcast = item?.id?.startsWith(PODCAST_ID_PREFIX) == true
+        val episode = if (isPodcast) Podcasts.episodeFor(item?.id) else null
+        val speed by Podcasts.speed.collectAsState()
 
-        val addButton = track?.let { t ->
-            LightBarButton.LightIcon(LightIcons.ADD, onClick = { navigateTo({ AddToPlaylistScreen(it, t) }) })
+        val rightButton = when {
+            isPodcast -> LightBarButton.Text(formatSpeed(speed), onClick = { Podcasts.cycleSpeed() })
+            track != null -> LightBarButton.LightIcon(LightIcons.ADD, onClick = { navigateTo({ AddToPlaylistScreen(it, track) }) })
+            else -> null
         }
+        val playPause = LightBarButton.LightIcon(
+            if (playing) LightIcons.PAUSE else LightIcons.PLAY,
+            onClick = { if (playing) player.pause() else player.play() },
+        )
+        val controls = if (isPodcast) listOf(
+            LightBarButton.LightIcon(LightIcons.SKIP_BACKWARD_FIFTEEN, onClick = {
+                player.seekTo((position - 15_000).coerceAtLeast(0))
+            }),
+            playPause,
+            LightBarButton.LightIcon(LightIcons.SKIP_FORWARD_FIFTEEN, onClick = {
+                val target = position + 15_000
+                player.seekTo(if (duration > 0) target.coerceAtMost(duration - 1_000) else target)
+            }),
+        ) else listOf(
+            LightBarButton.LightIcon(LightIcons.REWIND, onClick = {
+                // Like a CD player: restart the song, or go back if near the start.
+                if (position > 3_000) player.seekTo(0) else player.skipToPrevious()
+            }),
+            playPause,
+            LightBarButton.LightIcon(LightIcons.FAST_FORWARD, onClick = { player.skipToNext() }),
+        )
 
         Frame(
             title = "Now playing",
             onBack = { goBack() },
-            right = addButton,
-            bottom = listOf(
-                LightBarButton.LightIcon(LightIcons.REWIND, onClick = {
-                    // Like a CD player: restart the song, or go back if near the start.
-                    if (position > 3_000) player.seekTo(0) else player.skipToPrevious()
-                }),
-                LightBarButton.LightIcon(
-                    if (playing) LightIcons.PAUSE else LightIcons.PLAY,
-                    onClick = { if (playing) player.pause() else player.play() },
-                ),
-                LightBarButton.LightIcon(LightIcons.FAST_FORWARD, onClick = { player.skipToNext() }),
-            ),
+            right = rightButton,
+            bottom = controls,
         ) {
             if (item == null) {
                 Message("Nothing playing.")
@@ -82,7 +98,7 @@ class NowPlayingScreen(host: SealedLightActivity) : MusicScreen(host) {
                     modifier = Modifier.padding(top = 0.5f.gridUnitsAsDp()),
                 )
                 LightText(
-                    text = item.metadata.album ?: track?.album.orEmpty(),
+                    text = if (isPodcast) formatDate(episode?.pubDate ?: 0) else item.metadata.album ?: track?.album.orEmpty(),
                     variant = LightTextVariant.Copy,
                     lighten = true,
                     maxLines = 1,
@@ -98,13 +114,19 @@ class NowPlayingScreen(host: SealedLightActivity) : MusicScreen(host) {
                 )
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     LightText(formatTime(position), LightTextVariant.Detail, monospace = true)
-                    LightText("${index + 1} of ${queue.size}", LightTextVariant.Detail, lighten = true)
+                    LightText(
+                        if (isPodcast) (if (duration > 0) "${formatTime(duration - position)} left" else "")
+                        else "${index + 1} of ${queue.size}",
+                        LightTextVariant.Detail,
+                        lighten = true,
+                    )
                     LightText(
                         if (duration > 0) formatTime(duration) else "--:--",
                         LightTextVariant.Detail,
                         monospace = true,
                     )
                 }
+                VolumeBar(Modifier.padding(top = 2f.gridUnitsAsDp()))
             }
         }
     }

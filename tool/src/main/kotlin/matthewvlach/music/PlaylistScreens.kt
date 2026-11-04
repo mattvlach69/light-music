@@ -131,7 +131,12 @@ class AddToPlaylistScreen(host: SealedLightActivity, private val track: Track) :
 }
 
 /** Full-screen keyboard for naming a playlist. Returns the text, or null on back. */
-class NameEditorScreen(host: SealedLightActivity, private val title: String) : SimpleLightScreen<String?>(host) {
+class NameEditorScreen(
+    host: SealedLightActivity,
+    private val title: String,
+    private val submitLabel: String = "SAVE",
+    private val initialCaps: Boolean = true,
+) : SimpleLightScreen<String?>(host) {
     @Composable
     override fun Content() {
         val keyboard = rememberKeyboardOptions()
@@ -145,9 +150,9 @@ class NameEditorScreen(host: SealedLightActivity, private val title: String) : S
                 onSubmit = { goBack(it.toString().trim()) },
                 onBack = { goBack(null) },
                 modifier = Modifier.background(LightThemeTokens.colors.background),
-                submitLabel = "SAVE",
+                submitLabel = submitLabel,
                 singleLine = true,
-                initialCaps = true,
+                initialCaps = initialCaps,
             )
         }
     }
