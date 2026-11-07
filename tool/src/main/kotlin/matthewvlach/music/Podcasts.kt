@@ -319,6 +319,17 @@ object Podcasts {
         }
     }
 
+    /** Save where the current episode is right now (called when the tool goes to the background). */
+    fun recordNow(p: com.thelightphone.sdk.audio.LightAudioPlayer) {
+        val id = p.queue.value.getOrNull(p.currentMediaItemIndex.value)?.id ?: return
+        val key = id.takeIf { it.startsWith(PODCAST_ID_PREFIX) }?.removePrefix(PODCAST_ID_PREFIX) ?: return
+        val pos = p.positionMs.value
+        val dur = p.durationMs.value
+        if (pos < 2_000) return
+        setProgress(key, EpisodeProgress(pos, dur, dur > 0 && pos >= dur - 30_000))
+        saveProgress(force = true)
+    }
+
     private fun setProgress(key: String, p: EpisodeProgress) {
         _progress.value = _progress.value + (key to p)
     }

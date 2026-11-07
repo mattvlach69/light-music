@@ -130,6 +130,14 @@ object Music {
     }
 
     fun disconnect() {
+        val p = player
+        if (p != null) {
+            // Remember where podcasts and audiobooks are before letting go.
+            Podcasts.recordNow(p)
+            Audiobooks.recordNow(p)
+            // While something plays, stay connected so progress keeps being saved in the background.
+            if (p.isPlaying.value) return
+        }
         player?.release()
         player = null
         _playerFlow.value = null

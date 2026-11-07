@@ -156,6 +156,17 @@ object Audiobooks {
         }
     }
 
+    /** Save where the current book is right now (called when the tool goes to the background). */
+    fun recordNow(p: com.thelightphone.sdk.audio.LightAudioPlayer) {
+        val q = p.queue.value
+        val (id, part) = parseId(q.getOrNull(p.currentMediaItemIndex.value)?.id) ?: return
+        val pos = p.positionMs.value
+        val dur = p.durationMs.value
+        if (pos < 2_000 && part == 0) return
+        setProgress(id, BookProgress(part, pos, part == q.size - 1 && dur > 0 && pos >= dur - 30_000))
+        saveProgress(force = true)
+    }
+
     private fun setProgress(id: String, p: BookProgress) {
         _progress.value = _progress.value + (id to p)
     }
